@@ -1,0 +1,25 @@
+{
+  "name": "ai-factory",
+  "version": "1.0.0",
+  "description": "AI Task Factory Platform - MVP",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "node-agent",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "build": "npm run build -w shared && npm run build -w backend && npm run build -w frontend",
+    "start": "npm run start -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "sql.js": "^1.14.1"
+  }
+}
