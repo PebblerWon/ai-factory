@@ -5,32 +5,38 @@ const agent = new NodeAgent({
   nodeName: 'My AI Node',
   capabilities: ['llm', 'image_gen'],
   modelVersions: ['gpt-4', 'stable-diffusion'],
-  token: 'your-jwt-token',
+  apiKey: process.env.AIFACTORY_API_KEY!,
+  serverUrl: process.env.AIFACTORY_URL || 'http://localhost:3001',
+  pollingInterval: 10000,
+  maxConcurrentTasks: 3,
+  taskTimeout: 600,
+  autoReleaseTimeout: true,
   taskHandler: async (task) => {
-    console.log('Received task:', task);
+    console.log('[Example] Processing task:', task.id, task.type);
 
     switch (task.type) {
       case 'text_summary':
-        return {
-          summary: `Summary of: ${task.input.content?.substring(0, 50)}...`,
-        };
+        const summary = task.input.content?.substring(0, 100) || '';
+        console.log('[Example] Summarizing text:', summary);
+        return { summary: `Summary: ${summary}` };
 
       case 'translation':
+        console.log('[Example] Translating text to', task.input.targetLanguage);
         return {
-          translatedText: `[Translated] ${task.input.text}`,
+          translatedText: `[Translated to ${task.input.targetLanguage}] ${task.input.text}`
         };
 
       case 'image_generation':
+        console.log('[Example] Generating', task.input.imageCount || 1, 'images');
         return {
           images: [
-            'data:image/svg+xml,...',
-          ],
+            'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"><text x="10" y="50">Generated Image</text></svg>'
+          ]
         };
 
       case 'data_conversion':
-        return {
-          convertedData: '[Converted data]',
-        };
+        console.log('[Example] Converting data from', task.input.inputFormat, 'to', task.input.outputFormat);
+        return { convertedData: '[Converted data]' };
 
       default:
         throw new Error(`Unknown task type: ${task.type}`);
@@ -38,10 +44,30 @@ const agent = new NodeAgent({
   },
 });
 
-agent.connect();
+async function main() {
+  try {
+    await agent.start();
+    console.log('[Example] Node agent started successfully');
+
+    const status = agent.getStatus();
+    console.log('[Example] Agent status:', status);
+
+  } catch (error) {
+    console.error('[Example] Failed to start agent:', error);
+    process.exit(1);
+  }
+}
 
 process.on('SIGINT', () => {
-  console.log('Shutting down...');
-  agent.disconnect();
+  console.log('\n[Example] Shutting down...');
+  agent.stop();
   process.exit(0);
 });
+
+process.on('SIGTERM', () => {
+  console.log('\n[Example] Shutting down...');
+  agent.stop();
+  process.exit(0);
+});
+
+main();

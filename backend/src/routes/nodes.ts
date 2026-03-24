@@ -6,11 +6,14 @@ import {
   getNodeById,
   createNode,
   getOnlineNodesByCapability,
-  getAllNodes
+  getAllNodes,
+  getUserPointsForNode,
+  getNodePointsStatus,
 } from '../sqlite';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
+const DEFAULT_POINTS_LIMIT = 1000;
 
 const createNodeSchema = z.object({
   nodeName: z.string().min(1).max(50),
@@ -136,6 +139,66 @@ router.get('/online/:capability', authMiddleware, (req: AuthRequest, res: Respon
   } catch (error) {
     console.error('Get online nodes error:', error);
     res.status(500).json({ success: false, error: 'Failed to get online nodes' });
+  }
+});
+
+router.get('/:id/can-claim', authMiddleware, (req: AuthRequest, res: Response) => {
+  try {
+    const node = getNodeById(req.params.id) as any;
+
+    if (!node) {
+      return res.status(404).json({ success: false, error: 'Node not found' });
+    }
+
+    const pointsLimit = node.points_limit || DEFAULT_POINTS_LIMIT;
+    const currentPoints = getUserPointsForNode(req.params.id);
+    const remaining = Math.max(0, pointsLimit - currentPoints);
+    const canClaim = currentPoints < pointsLimit;
+
+    res.json({
+      success: true,
+      data: {
+        canClaim,
+        currentPoints,
+        pointsLimit,
+        remaining,
+        message: canClaim ? null : '积分已达上限，请发布任务消耗积分'
+      }
+    });
+  } catch (error) {
+    console.error('Check can claim error:', error);
+    res.status(500).json({ success: false, error: 'Failed to check can claim' });
+  }
+});
+
+router.get('/:id/points-status', authMiddleware, (req: AuthRequest, res: Response) => {
+  try {
+    const node = getNodeById(req.params.id) as any;
+
+    if (!node) {
+      return res.status(404).json({ success: false, error: 'Node not found' });
+    }
+
+    const pointsStatus = getNodePointsStatus(req.params.id) as any;
+    const pointsLimit = pointsStatus?.points_limit || DEFAULT_POINTS_LIMIT;
+    const currentPoints = getUserPointsForNode(req.params.id);
+    const remaining = Math.max(0, pointsLimit - currentPoints);
+    const canClaim = currentPoints < pointsLimit;
+
+    res.json({
+      success: true,
+      data: {
+        currentPoints,
+        pointsLimit,
+        remaining,
+        earnedTotal: pointsStatus?.earned_total || 0,
+        publishedTotal: pointsStatus?.published_total || 0,
+        canClaim
+      }
+    });
+  } catch (error) {
+    console.error('Get points status error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get points status' });
   }
 });
 

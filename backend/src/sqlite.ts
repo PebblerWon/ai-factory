@@ -41,6 +41,9 @@ export async function initDatabase() {
       status TEXT NOT NULL DEFAULT 'offline',
       last_heartbeat TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      points_limit INTEGER NOT NULL DEFAULT 1000,
+      earned_total INTEGER NOT NULL DEFAULT 0,
+      published_total INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
@@ -505,4 +508,100 @@ export function updateApiKeyLastUsed(id: string) {
   stmt.run([id]);
   stmt.free();
   saveDatabase();
+}
+
+export async function claimTask(taskId: string, nodeId: string): Promise<boolean> {
+  if (!db) return false;
+
+  const stmt = db.prepare(`
+    UPDATE tasks
+    SET status = 'assigned',
+        assigned_node_id = ?,
+        assigned_at = datetime('now')
+    WHERE id = ? AND status = 'pending'
+  `);
+  stmt.run([nodeId, taskId]);
+  stmt.free();
+  saveDatabase();
+
+  const checkStmt = db.prepare('SELECT changes() as changes');
+  checkStmt.step();
+  const result = checkStmt.getAsObject() as any;
+  checkStmt.free();
+
+  return result.changes > 0;
+}
+
+export async function submitTaskResult(taskId: string, output: string, status: string) {
+  if (!db) return;
+
+  let completedAt = "datetime('now')";
+  if (status !== 'completed') {
+    completedAt = 'NULL';
+  }
+
+  const stmt = db.prepare(`
+    UPDATE tasks
+    SET output = ?,
+        status = ?,
+        completed_at = ${completedAt}
+    WHERE id = ?
+  `);
+  stmt.run([output, status, taskId]);
+  stmt.free();
+  saveDatabase();
+}
+
+export function updateNodePointsLimit(nodeId: string, pointsLimit: number) {
+  if (!db) return;
+  const stmt = db.prepare('UPDATE nodes SET points_limit = ? WHERE id = ?');
+  stmt.run([pointsLimit, nodeId]);
+  stmt.free();
+  saveDatabase();
+}
+
+export function updateNodeEarnedTotal(nodeId: string, amount: number) {
+  if (!db) return;
+  const stmt = db.prepare('UPDATE nodes SET earned_total = earned_total + ? WHERE id = ?');
+  stmt.run([amount, nodeId]);
+  stmt.free();
+  saveDatabase();
+}
+
+export function updateNodePublishedTotal(nodeId: string, amount: number) {
+  if (!db) return;
+  const stmt = db.prepare('UPDATE nodes SET published_total = published_total + ? WHERE id = ?');
+  stmt.run([amount, nodeId]);
+  stmt.free();
+  saveDatabase();
+}
+
+export function getNodePointsStatus(nodeId: string) {
+  if (!db) return undefined;
+  const stmt = db.prepare('SELECT points_limit, earned_total, published_total FROM nodes WHERE id = ?');
+  stmt.bind([nodeId]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    return row;
+  }
+  stmt.free();
+  return undefined;
+}
+
+export function getUserPointsForNode(nodeId: string) {
+  if (!db) return 0;
+  const stmt = db.prepare(`
+    SELECT u.points FROM users u
+    JOIN nodes n ON u.id = n.user_id
+    WHERE n.id = ?
+  `);
+  stmt.bind([nodeId]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject() as any;
+    stmt.free();
+    return row.points || 0;
+  }
+  stmt.free();
+  return 0;
 }

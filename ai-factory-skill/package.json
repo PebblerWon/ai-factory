@@ -1,0 +1,28 @@
+{
+  "name": "@ai-factory/openclaw-skill",
+  "version": "1.0.0",
+  "description": "OpenClaw skill for AI Factory platform integration",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "example": "ts-node examples/basic-usage.ts",
+    "lint": "eslint src/**/*.ts"
+  },
+  "keywords": [
+    "openclaw",
+    "ai-factory",
+    "task-automation",
+    "ai-tasks"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0"
+  }
+}

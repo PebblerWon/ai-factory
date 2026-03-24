@@ -1,7 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import { createServer } from 'http';
-import { WebSocketServer, WebSocket } from 'ws';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,11 +10,8 @@ import taskRoutes from './routes/tasks';
 import walletRoutes from './routes/wallet';
 import adminRoutes from './routes/admin';
 import apiKeyRoutes from './routes/api-keys';
-import { handleNodeWebSocket } from './websocket';
 
 const app = express();
-const server = createServer(app);
-const wss = new WebSocketServer({ server, path: '/ws' });
 
 const PORT = process.env.PORT || 3001;
 
@@ -43,13 +38,8 @@ async function startServer() {
       res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
 
-    wss.on('connection', (ws: WebSocket) => {
-      handleNodeWebSocket(ws);
-    });
-
-    server.listen(PORT, () => {
+    app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`WebSocket server running on ws://localhost:${PORT}/ws`);
       console.log(`Database path: ${path.join(dataDir, 'aifactory.db')}`);
     });
 

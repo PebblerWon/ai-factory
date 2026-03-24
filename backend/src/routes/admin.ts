@@ -10,7 +10,9 @@ import {
   cancelTask,
   updateUserPoints,
   createUser,
-  getUserById
+  getUserById,
+  getNodeById,
+  updateNodePointsLimit
 } from '../sqlite';
 import { authMiddleware, adminMiddleware, AuthRequest } from '../middleware/auth';
 
@@ -162,6 +164,40 @@ router.post('/users/:id/points', (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Update points error:', error);
     res.status(500).json({ success: false, error: 'Failed to update points' });
+  }
+});
+
+router.patch('/nodes/:id/points-limit', (req: AuthRequest, res: Response) => {
+  try {
+    const nodeId = req.params.id;
+    const { pointsLimit } = req.body;
+
+    if (typeof pointsLimit !== 'number' || pointsLimit < 100 || pointsLimit > 10000) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid points limit',
+        message: '积分上限必须在 100 - 10000 之间'
+      });
+    }
+
+    const node = getNodeById(nodeId);
+    if (!node) {
+      return res.status(404).json({ success: false, error: 'Node not found' });
+    }
+
+    updateNodePointsLimit(nodeId, pointsLimit);
+
+    res.json({
+      success: true,
+      message: '积分上限已更新',
+      data: {
+        nodeId,
+        pointsLimit
+      }
+    });
+  } catch (error) {
+    console.error('Update points limit error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update points limit' });
   }
 });
 
