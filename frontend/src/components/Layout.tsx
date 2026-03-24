@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
-import { LayoutDashboard, ListTodo, Wallet, Bot, Shield, LogOut } from 'lucide-react';
+import { LayoutDashboard, ListTodo, Wallet, Bot, Shield, LogOut, Key } from 'lucide-react';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -10,6 +10,7 @@ export default function Layout() {
     { path: '/dashboard', label: '仪表盘', icon: LayoutDashboard },
     { path: '/tasks', label: '任务管理', icon: ListTodo },
     { path: '/wallet', label: '钱包', icon: Wallet },
+    { path: '/api-keys', label: 'API密钥', icon: Key },
     ...(user?.role === 'node' || user?.role === 'admin'
       ? [{ path: '/node', label: '节点管理', icon: Bot }]
       : []),

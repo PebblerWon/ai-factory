@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import TaskCreate from './pages/TaskCreate';
 import Wallet from './pages/Wallet';
+import ApiKeys from './pages/ApiKeys';
 import NodeDashboard from './pages/NodeDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Layout from './components/Layout';
@@ -50,6 +51,7 @@ function App() {
           <Route path="tasks" element={<Tasks />} />
           <Route path="tasks/create" element={<TaskCreate />} />
           <Route path="wallet" element={<Wallet />} />
+          <Route path="api-keys" element={<ApiKeys />} />
           <Route path="node" element={
             <ProtectedRoute allowedRoles={['node', 'admin']}>
               <NodeDashboard />

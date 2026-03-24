@@ -11,6 +11,7 @@ import nodeRoutes from './routes/nodes';
 import taskRoutes from './routes/tasks';
 import walletRoutes from './routes/wallet';
 import adminRoutes from './routes/admin';
+import apiKeyRoutes from './routes/api-keys';
 import { handleNodeWebSocket } from './websocket';
 
 const app = express();
@@ -36,6 +37,7 @@ async function startServer() {
     app.use('/api/tasks', taskRoutes);
     app.use('/api/wallet', walletRoutes);
     app.use('/api/admin', adminRoutes);
+    app.use('/api/api-keys', apiKeyRoutes);
 
     app.get('/api/health', (req, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() });

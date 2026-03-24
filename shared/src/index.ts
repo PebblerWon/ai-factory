@@ -121,3 +121,29 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
 export const CONTENT_FILTER_KEYWORDS = [
   'violence', 'porn', 'political', 'drug', 'gambling'
 ];
+
+export interface ApiKey {
+  id: string;
+  userId: string;
+  name: string;
+  keyPrefix: string;
+  createdAt: Date;
+  lastUsedAt?: Date;
+  expiresAt?: Date;
+}
+
+export interface ApiKeyCreateResponse {
+  id: string;
+  name: string;
+  key: string;
+  keyPrefix: string;
+  createdAt: Date;
+}
+
+export interface ApiKeyListItem {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  createdAt: Date;
+  lastUsedAt?: Date;
+}

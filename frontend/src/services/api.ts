@@ -118,6 +118,22 @@ export interface Statistics {
   };
 }
 
+export interface ApiKey {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  createdAt: string;
+  lastUsedAt?: string;
+}
+
+export interface ApiKeyCreateResponse {
+  id: string;
+  name: string;
+  key: string;
+  keyPrefix: string;
+  createdAt: string;
+}
+
 export const authService = {
   register: (email: string, password: string) =>
     api.post<{ success: boolean; data: { user: User; token: string } }>('/auth/register', {
@@ -174,6 +190,15 @@ export const adminService = {
   banNode: (nodeId: string) => api.post<{ success: boolean }>(`/admin/nodes/${nodeId}/ban`),
 
   cancelTask: (taskId: string) => api.post<{ success: boolean }>(`/admin/tasks/${taskId}/cancel`),
+};
+
+export const apiKeyService = {
+  create: (name: string) =>
+    api.post<{ success: boolean; data: ApiKeyCreateResponse }>('/api-keys', { name }),
+
+  list: () => api.get<{ success: boolean; data: ApiKey[] }>('/api-keys'),
+
+  delete: (id: string) => api.delete<{ success: boolean }>(`/api-keys/${id}`),
 };
 
 export default api;

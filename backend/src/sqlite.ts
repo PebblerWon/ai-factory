@@ -78,6 +78,20 @@ export async function initDatabase() {
     )
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      key_hash TEXT NOT NULL,
+      key_prefix TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      last_used_at TEXT,
+      expires_at TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
   db.run(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_user_id ON nodes(user_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_nodes_status ON nodes(status)`);
@@ -85,6 +99,7 @@ export async function initDatabase() {
   db.run(`CREATE INDEX IF NOT EXISTS idx_tasks_creator_id ON tasks(creator_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_tasks_assigned_node_id ON tasks(assigned_node_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id)`);
 
   saveDatabase();
   console.log('Database initialized successfully');
@@ -415,4 +430,79 @@ export function closeDatabase() {
     db.close();
     db = null;
   }
+}
+
+export function createApiKey(apiKey: {
+  id: string;
+  userId: string;
+  name: string;
+  keyHash: string;
+  keyPrefix: string;
+}) {
+  if (!db) return;
+  const stmt = db.prepare(`
+    INSERT INTO api_keys (id, user_id, name, key_hash, key_prefix)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+  stmt.run([apiKey.id, apiKey.userId, apiKey.name, apiKey.keyHash, apiKey.keyPrefix]);
+  stmt.free();
+  saveDatabase();
+}
+
+export function getApiKeysByUserId(userId: string) {
+  if (!db) return [];
+  const results: any[] = [];
+  const stmt = db.prepare('SELECT * FROM api_keys WHERE user_id = ? ORDER BY created_at DESC');
+  stmt.bind([userId]);
+  while (stmt.step()) {
+    results.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return results;
+}
+
+export function getApiKeyById(id: string) {
+  if (!db) return undefined;
+  const stmt = db.prepare('SELECT * FROM api_keys WHERE id = ?');
+  stmt.bind([id]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    return row;
+  }
+  stmt.free();
+  return undefined;
+}
+
+export function verifyApiKey(keyHash: string) {
+  if (!db) return undefined;
+  const stmt = db.prepare('SELECT * FROM api_keys WHERE key_hash = ?');
+  stmt.bind([keyHash]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    if ((row as any).expires_at && new Date((row as any).expires_at) < new Date()) {
+      return undefined;
+    }
+    return row;
+  }
+  stmt.free();
+  return undefined;
+}
+
+export function deleteApiKey(id: string, userId: string) {
+  if (!db) return false;
+  const stmt = db.prepare('DELETE FROM api_keys WHERE id = ? AND user_id = ?');
+  stmt.run([id, userId]);
+  stmt.free();
+  saveDatabase();
+  return true;
+}
+
+export function updateApiKeyLastUsed(id: string) {
+  if (!db) return;
+  const stmt = db.prepare("UPDATE api_keys SET last_used_at = datetime('now') WHERE id = ?");
+  stmt.run([id]);
+  stmt.free();
+  saveDatabase();
 }
